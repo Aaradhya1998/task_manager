@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Smart Task Manager{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block page %}
+<main class="auth-wrapper">
+    <section class="auth-card" aria-labelledby="loginTitle">
+        <div class="auth-brand">
+            <a class="brand-mark" href="{{ url_for('home') }}" aria-label="Smart Task Manager home">
+                <i class="bi bi-check2-square"></i>
+            </a>
+            <div>
+                <h1 id="loginTitle">Welcome Back</h1>
+                <p>Sign in to manage your tasks and priorities.</p>
+            </div>
+        </div>
+
+        {% include "_flash.html" ignore missing %}
+
+        <form action="{{ url_for('login') }}" method="POST" class="auth-form">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <div class="input-group input-group-modern">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group input-group-modern">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                <a href="{{ url_for('register') }}" class="auth-link">Create account</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 auth-submit">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            New to Smart Task Manager?
+            <a href="{{ url_for('register') }}">Register now</a>
+        </p>
+    </section>
+</main>
+{% endblock %}

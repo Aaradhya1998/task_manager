@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Smart Task Manager{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block page %}
+<div class="dashboard-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        <div class="sidebar-brand">
+            <a class="brand-mark" href="{{ url_for('dashboard') }}" aria-label="Dashboard">
+                <i class="bi bi-check2-square"></i>
+            </a>
+            <span>Smart Tasks</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="sidebar-link active" href="#dashboardSection" data-dashboard-nav>
+                <i class="bi bi-grid-1x2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="sidebar-link" href="#taskSection" data-dashboard-nav>
+                <i class="bi bi-list-task"></i>
+                <span>Tasks</span>
+            </a>
+            <a class="sidebar-link" href="#analyticsSection" data-dashboard-nav>
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a class="sidebar-link" href="#updatesSection" data-dashboard-nav>
+                <i class="bi bi-bell"></i>
+                <span>Updates</span>
+            </a>
+            <a class="sidebar-link" href="{{ url_for('logout') }}">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <main class="dashboard-main">
+        <nav class="topbar navbar navbar-expand-lg dashboard-section" id="dashboardSection" aria-label="Dashboard header">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-icon d-lg-none" id="sidebarToggle" type="button" aria-label="Open sidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div>
+                    <p class="eyebrow">Dashboard</p>
+                    <h1>Welcome, {{ current_user.username }}</h1>
+                </div>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="notification-pill" aria-label="Pending tasks">
+                    <i class="bi bi-bell"></i>
+                    <span id="notificationCount">{{ analytics.pending_tasks }}</span>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                    <i class="bi bi-plus-lg me-2"></i>Add Task
+                </button>
+            </div>
+        </nav>
+
+        {% include "_flash.html" ignore missing %}
+
+        <section class="analytics-grid dashboard-section" aria-label="Task summary">
+            <article class="stat-card">
+                <div class="stat-icon bg-primary-subtle text-primary">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <div>
+                    <p>Total Tasks</p>
+                    <h2>{{ analytics.total_tasks }}</h2>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon bg-success-subtle text-success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <p>Completed Tasks</p>
+                    <h2>{{ analytics.completed_tasks }}</h2>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon bg-secondary-subtle text-secondary">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div>
+                    <p>Pending Tasks</p>
+                    <h2>{{ analytics.pending_tasks }}</h2>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon bg-info-subtle text-info">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <div>
+                    <p>Completion</p>
+                    <h2>{{ analytics.completion_rate }}%</h2>
+                </div>
+            </article>
+        </section>
+
+        <section class="analytics-panel dashboard-section" id="analyticsSection" aria-label="Task analytics chart">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Analytics</p>
+                    <h2>Task Status Split</h2>
+                </div>
+            </div>
+
+            {% set total_tasks = analytics.total_tasks or 0 %}
+            {% set completed_tasks = analytics.completed_tasks or 0 %}
+            {% set pending_tasks = analytics.pending_tasks or 0 %}
+            {% set completed_percent = (completed_tasks / total_tasks * 100) if total_tasks else 0 %}
+            {% set pending_percent = 100 - completed_percent if total_tasks else 0 %}
+
+            <div class="analytics-chart-layout">
+                <div
+                    class="task-pie-chart{% if not total_tasks %} empty{% endif %}"
+                    style="--completed-percent: {{ completed_percent }}%;"
+                    role="img"
+                    aria-label="{{ completed_tasks }} completed tasks and {{ pending_tasks }} pending tasks"
+                >
+                    <div class="pie-center">
+                        <strong>{{ analytics.completion_rate }}%</strong>
+                        <span>Done</span>
+                    </div>
+                </div>
+
+                <div class="chart-legend" aria-label="Pie chart legend">
+                    <div class="legend-item">
+                        <span class="legend-swatch completed"></span>
+                        <div>
+                            <strong>{{ completed_tasks }}</strong>
+                            <p>Completed tasks</p>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-swatch pending"></span>
+                        <div>
+                            <strong>{{ pending_tasks }}</strong>
+                            <p>Pending tasks</p>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-swatch total"></span>
+                        <div>
+                            <strong>{{ total_tasks }}</strong>
+                            <p>Total tasks</p>
+                        </div>
+                    </div>
+                    {% if not total_tasks %}
+                        <p class="chart-empty-note">Add tasks to populate the analytics pie chart.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="task-panel dashboard-section" id="taskSection">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Task List</p>
+                        <h2>Current Work</h2>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                        <i class="bi bi-plus-lg me-1"></i>Add
+                    </button>
+                </div>
+
+                {% if tasks %}
+                    <div class="table-responsive task-table-wrap">
+                        <table class="table align-middle task-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Title</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Priority</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Created Date</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                    {% set priority = task.priority or 'Medium' %}
+                                    {% set status = task.status or 'Pending' %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ task.title }}</td>
+                                        <td class="text-muted-cell">{{ task.description or 'No description added' }}</td>
+                                        <td>
+                                            {% if priority == 'High' %}
+                                                <span class="badge text-bg-danger">High</span>
+                                            {% elif priority == 'Medium' %}
+                                                <span class="badge text-bg-warning">Medium</span>
+                                            {% else %}
+                                                <span class="badge text-bg-success">Low</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if status == 'Completed' %}
+                                                <span class="badge text-bg-success">Completed</span>
+                                            {% else %}
+                                                <span class="badge text-bg-secondary">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ task.created_at.strftime('%d %b %Y') if task.created_at else '-' }}</td>
+                                        <td>
+                                            <div class="action-buttons justify-content-end">
+                                                <button
+                                                    class="btn btn-sm btn-soft-primary edit-task-btn"
+                                                    type="button"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editTaskModal-{{ task.id }}"
+                                                    aria-label="Edit {{ task.title }}"
+                                                >
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+
+                                                {% if status != 'Completed' %}
+                                                    <form action="{{ url_for('update_task', id=task.id) }}" method="POST">
+                                                        <input type="hidden" name="title" value="{{ task.title }}">
+                                                        <input type="hidden" name="description" value="{{ task.description or '' }}">
+                                                        <input type="hidden" name="priority" value="{{ priority }}">
+                                                        <input type="hidden" name="status" value="Completed">
+                                                        <button class="btn btn-sm btn-soft-success" type="submit" aria-label="Mark {{ task.title }} complete">
+                                                            <i class="bi bi-check2"></i>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+
+                                                <a class="btn btn-sm btn-soft-danger" href="{{ url_for('delete_task', id=task.id) }}" data-confirm-delete aria-label="Delete {{ task.title }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+
+                                            <div class="modal fade" id="editTaskModal-{{ task.id }}" tabindex="-1" aria-labelledby="editTaskModalLabel-{{ task.id }}" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content modern-modal">
+                                                        <div class="modal-header">
+                                                            <div>
+                                                                <p class="eyebrow mb-1">Task Details</p>
+                                                                <h2 class="modal-title fs-5" id="editTaskModalLabel-{{ task.id }}">Edit Task</h2>
+                                                            </div>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{{ url_for('update_task', id=task.id) }}" method="POST">
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label for="editTitle-{{ task.id }}" class="form-label">Title</label>
+                                                                    <input type="text" class="form-control" id="editTitle-{{ task.id }}" name="title" value="{{ task.title }}" required>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="editDescription-{{ task.id }}" class="form-label">Description</label>
+                                                                    <textarea class="form-control" id="editDescription-{{ task.id }}" name="description" rows="4">{{ task.description or '' }}</textarea>
+                                                                </div>
+                                                                <div class="row g-3">
+                                                                    <div class="col-md-6">
+                                                                        <label for="editPriority-{{ task.id }}" class="form-label">Priority</label>
+                                                                        <select class="form-select" id="editPriority-{{ task.id }}" name="priority" required>
+                                                                            <option value="High" {% if priority == 'High' %}selected{% endif %}>High</option>
+                                                                            <option value="Medium" {% if priority == 'Medium' %}selected{% endif %}>Medium</option>
+                                                                            <option value="Low" {% if priority == 'Low' %}selected{% endif %}>Low</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label for="editStatus-{{ task.id }}" class="form-label">Status</label>
+                                                                        <select class="form-select" id="editStatus-{{ task.id }}" name="status" required>
+                                                                            <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
+                                                                            <option value="Completed" {% if status == 'Completed' %}selected{% endif %}>Completed</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-primary">
+                                                                    <i class="bi bi-save me-2"></i>Save Changes
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="bi bi-clipboard-check"></i>
+                        </div>
+                        <h3>No tasks yet</h3>
+                        <p>Add your first task to start tracking progress from this dashboard.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                            <i class="bi bi-plus-lg me-2"></i>Add Task
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <aside class="updates-panel dashboard-section" id="updatesSection">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Live Updates</p>
+                        <h2>Notifications</h2>
+                    </div>
+                </div>
+                <div class="notification-list" id="notificationList">
+                    <div class="notification-item">
+                        <span class="notification-dot"></span>
+                        <p>{{ analytics.pending_tasks }} task{{ '' if analytics.pending_tasks == 1 else 's' }} pending.</p>
+                    </div>
+                    <div class="notification-item">
+                        <span class="notification-dot"></span>
+                        <p>{{ analytics.completed_tasks }} task{{ '' if analytics.completed_tasks == 1 else 's' }} completed.</p>
+                    </div>
+                    <div class="notification-item">
+                        <span class="notification-dot"></span>
+                        <p>Completion rate is {{ analytics.completion_rate }}%.</p>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </main>
+</div>
+
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow mb-1">Task Details</p>
+                    <h2 class="modal-title fs-5" id="addTaskModalLabel">Add Task</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_task') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="taskTitle" name="title" placeholder="Enter task title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="taskDescription" name="description" rows="4" placeholder="Add useful details"></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label for="taskPriority" class="form-label">Priority</label>
+                        <select class="form-select" id="taskPriority" name="priority" required>
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
