@@ -1,4 +1,4 @@
-gi# Smart Task Management System
+# Smart Task Management System
 
 A Flask-based Smart Task Management System that supports user authentication, task CRUD operations, PostgreSQL integration, real-time updates using Flask-SocketIO, and analytics with Pandas and NumPy.
 
